@@ -1,6 +1,7 @@
 const router = require('express').Router();
 
 const User = require("../../models/User.js");
+const Profile = require("../../models/Profile.js");
 
 router.get('/', async (req, res) => {
   const users = await User.find({});
@@ -45,7 +46,7 @@ router.post('/register', async (req, res) => {
     });
 })
 
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/delete/:id', orgauth,async (req, res) => {
     const user = await User.findById(req.params.id);
 
     if(!user){
@@ -53,6 +54,7 @@ router.delete('/delete/:id', async (req, res) => {
     }
 
     await User.deleteOne({ _id : req.params.id });
+    await Profile.remove(user);
     return res.status(200).json({ msg: "User Deleted successfully" });
 })
 

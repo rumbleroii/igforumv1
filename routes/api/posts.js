@@ -3,14 +3,15 @@ const router = require('express').Router();
 const fs = require('fs');
 const path = require('path');
 const shortid = require('shortid');
-
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+let baseDir = path.join(__dirname, '/../../csv/');
 
 const orgauth = require("../../middleware/orgauth");
 const auth = require("../../middleware/auth");
 
 const Post = require("../../models/Post");
 const Organization = require('../../models/Organization');
+const Profile = require('../../models/Profile');
 
 // Get Post Timeline
 router.get("/", auth, async (req, res) => {
@@ -198,15 +199,25 @@ router.get("/download/:id", orgauth, async (req, res) => {
 
   for(var i=0;i<post.registrants.length;i++){
       const user = await User.findById(post.registrants[i].user._id.toString());
+      const profile = await Profile.findOne({ user: user }).populate('user', ['name', 'avatar', 'phoneNo']);
+
       const obj = {
-        name : user.name,
-        email : user.email,
-        phoneNo : user.phoneNo
+        name : profile.name,
+        email : profile.email,
+        phoneNo : profile.phoneNo,
+        firstname: profile.firstname,
+        lastname: profile.lastname,
+        rollno: profile.rollno,
+        regno: profile.regno,
+        degree: profile.degree,
+        branch: profile.branch,
+        year: profile.year
       }
+
       registrants.push(obj);
   }
 
-  let baseDir = path.join(__dirname, '/../../csv/');
+
   const fileName = post.title.toString()+"_"+shortid.generate()+".csv";
   const fileLocation = `${baseDir}${fileName}`;
 
@@ -217,7 +228,9 @@ router.get("/download/:id", orgauth, async (req, res) => {
 
   const csvWriter = createCsvWriter({
     path: fileLocation,
-    header: ['name','email','phoneNo'].map((item) => ({id: item, title: item}))
+    header: [
+      'name', 'email', 'phoneNo', 'firstname', 'lastname', 'rollno', 'regno', 'degree', 'branch', 'year'
+    ].map((item) => ({id: item, title: item}))
   })
 
   try {
