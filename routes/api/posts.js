@@ -227,7 +227,7 @@ router.get("/download/:id", orgauth, async (req, res) => {
   const fileName = post.title.toString()+"_"+shortid.generate()+".csv";
   const fileLocation = `${baseDir}${fileName}`;
 
-  await fs.open(fileLocation, 'w', function (err, file) {
+  await fs.open(fileLocation, 'w', function (err) {
     if (err) console.log(err);
     console.log('File Created!');
   });

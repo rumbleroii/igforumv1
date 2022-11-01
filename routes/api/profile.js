@@ -1,8 +1,5 @@
 const router = require('express').Router();
 
-const User = require('../../models/User');
-const Organization = require('../../models/Organization');
-
 const auth = require("../../middleware/auth");
 
 // User profile
@@ -51,8 +48,6 @@ router.post('/', auth, async (req, res) => {
       hostel,
       linkedin,
       githubusername,
-      skills,
-      clubs
     } = req.body;
 
 

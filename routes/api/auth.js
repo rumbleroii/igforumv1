@@ -8,7 +8,6 @@ const jwt = require('jsonwebtoken');
 router.post('/login', async (req, res) => {
   const {
     email,
-    name,
     isOrganization
   } = req.body;
 
@@ -42,6 +41,6 @@ router.post('/login', async (req, res) => {
   })
 })
 
-// Logout is frontend 
+// Logout is frontend
 
 module.exports = router;

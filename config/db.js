@@ -1,5 +1,6 @@
 require('dotenv').config();
 const mongoose = require("mongoose");
+const logger = require("../logger");
 
 const db = process.env.MongoURI;
 
@@ -10,7 +11,7 @@ const connectDB = async () => {
       useUnifiedTopology: true,
     });
 
-    console.log("[Info] MongoDB Connected Successfully!");
+    logger.info("[Info] MongoDB Connected Successfully!");
   } catch (err) {
     console.error(err.message);
 
