@@ -49,9 +49,9 @@ const PostSchema = new mongoose.Schema({
     max: 10
   },
 
-  lastDate: {
-    type: Date,
-    default: Date.now,
+  venue: {
+    type: String,
+    max: 30
   },
 
   date: {

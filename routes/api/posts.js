@@ -27,7 +27,7 @@ router.get("/", auth, async (req, res) => {
       let postObj = [];
 
       for(var i=0;i<posts.length;i++){
-        let {organization, title, body, likes, updated, id, registrants, date} = posts[i];
+        let {organization, title, body, likes, updated, id, registrants, duration, venue, date} = posts[i];
         organization = await Organization.findOne(organization);
 
         const instance = {
@@ -38,6 +38,8 @@ router.get("/", auth, async (req, res) => {
           updated: updated,
           _id: id,
           registrants: registrants.length,
+          duration: duration,
+          venue: venue,
           date: date
         }
 
@@ -57,7 +59,7 @@ router.get("/", auth, async (req, res) => {
 
 // Create Post
 router.post("/", orgauth, async (req, res) => {
-  const { title, body, duration } = req.body;
+  const { title, body, duration, venue } = req.body;
 
   const postField = {};
 
@@ -65,6 +67,7 @@ router.post("/", orgauth, async (req, res) => {
   if (title) postField.title = title;
   if (body) postField.body = body;
   if (duration) postField.duration = duration;
+  if (venue) postField.venue = venue;
 
   // Creating Post
   const newPost = new Post(postField);
@@ -84,13 +87,14 @@ router.put("/:id", orgauth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
-    const { title, body, duration } = req.body;
+    const { title, body, duration, venue } = req.body;
 
     const postUpdated = post;
 
     if (title) postUpdated.title = title;
     if (body) postUpdated.body = body;
     if (duration) postUpdated.duration = duration;
+    if (venue) postUpdated.venue = venue;
 
     if (post.userId === req.body.userId) {
       await post.updateOne({
@@ -98,6 +102,7 @@ router.put("/:id", orgauth, async (req, res) => {
           title: postUpdated.title,
           body: postUpdated.body,
           duration: postUpdated.duration,
+          venue: postUpdated.venue,
           updated: true,
         },
       });
