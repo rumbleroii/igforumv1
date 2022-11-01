@@ -26,6 +26,8 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms'))
 // Connecting database
 connectDB();
 
+
+// PORT
 const PORT = process.env.PORT || 3000;
 
 // Define routes
@@ -37,10 +39,18 @@ app.use('/api/users', require('./routes/api/users'));
 
 // request to handle undefined or all other routes
 app.get("*", async (req, res) => {
-   logger.info("Undefined Route Accessed");
-   res.status(404).json({
-     msg : "Route not found"
-   })
+  try {
+    logger.error("Undefined Route Accessed");
+    res.status(404).json({
+      msg : "Route not found"
+    })
+  } catch ( err ) {
+    logger.error(err);
+    res.status(500).json({
+      error: err
+    })
+  }
+
 })
 
 app.listen(PORT, () =>{
