@@ -3,6 +3,10 @@ const router = require('express').Router();
 const User = require("../../models/User.js");
 const Profile = require("../../models/Profile.js");
 
+const upload = require('../../config/imageUploader.js');
+
+const orgauth = require("../../middleware/orgauth");
+
 router.get('/', async (req, res) => {
   const users = await User.find({});
   res.status(200).json({
@@ -46,7 +50,7 @@ router.post('/register', async (req, res) => {
     });
 })
 
-router.delete('/delete/:id', orgauth,async (req, res) => {
+router.delete('/delete/:id', orgauth ,async (req, res) => {
     const user = await User.findById(req.params.id);
 
     if(!user){
@@ -58,5 +62,11 @@ router.delete('/delete/:id', orgauth,async (req, res) => {
     return res.status(200).json({ msg: "User Deleted successfully" });
 })
 
+
+router.post('/upload', upload.single('image'), async (req, res) => {
+
+  console.log(req.user);
+  return res.status(200).json({ msg: "File Uploaded", path : req.file.path });
+})
 
 module.exports = router;
