@@ -29,7 +29,6 @@ router.get("/", auth, async (req, res) => {
 
       for(var i=0;i<posts.length;i++){
         let {organization, title, body, likes, updated, id, registrants, duration, venue, date} = posts[i];
-        organization = await Organization.findOne(organization);
 
         const instance = {
           organization: organization.name,
@@ -86,7 +85,12 @@ router.post("/", orgauth, async (req, res) => {
 // Update Post
 router.put("/:id", orgauth, async (req, res) => {
   try {
+
     const post = await Post.findById(req.params.id);
+
+    if(post.organization.toString() !== req.user.id){
+      return res.status(400).json({errors : "Not Authorized to edit"});
+    }
 
     const { title, body, duration, venue } = req.body;
 
@@ -122,7 +126,10 @@ router.put("/:id", orgauth, async (req, res) => {
 // Delete Post
 router.delete("/:id", orgauth, async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+
+    if(post.organization !== req.user.id){
+      return res.status(400).json({errors : "Not Authorized to delete"});
+    }
 
     if (post.userId === req.body.userId) {
       await post.deleteOne({ _id: req.params.id });
@@ -162,7 +169,7 @@ router.put("/register/:id", auth, async (req, res) => {
   // checking is registerant is present
   if(post.registrants){
     for(var i=0;i<post.registrants.length;i++){
-      if(post.registrants[i].user._id.toString() === req.user.id){
+      if(post.registrants[i]._id.toString() === req.user.id){
         registrant = true;
         break;
       }
@@ -187,6 +194,10 @@ router.put("/register/:id", auth, async (req, res) => {
 router.get("/registrants/:id", orgauth, async (req, res) => {
   const post = await Post.findOne({ _id : req.params.id });
 
+  if(post.organization.toString() !== req.user.id){
+    return res.status(400).json({errors : "Not Authorized to view"});
+  }
+
   let registrants = [];
 
   for(var i=0;i<post.registrants.length;i++){
@@ -198,8 +209,12 @@ router.get("/registrants/:id", orgauth, async (req, res) => {
 })
 
 // Download CSV
-router.get("/download/:id", orgauth, async (req, res) => {
+router.get("/download/:id",  orgauth, async (req, res) => {
   const post = await Post.findOne({ _id : req.params.id });
+
+  if(post.organization.toString() !== req.user.id){
+    return res.status(400).json({errors : "Not Authorized to download"});
+  }
 
   let registrants = [];
 
@@ -207,17 +222,35 @@ router.get("/download/:id", orgauth, async (req, res) => {
       const user = await User.findById(post.registrants[i].user._id.toString());
       const profile = await Profile.findOne({ user: user }).populate('user', ['name', 'avatar', 'phoneNo']);
 
+      let name, email, phoneNo, firstname, lastname, rollno, regno, degree, branch, year;
+      name = user.name;
+      email = user.email;
+      phoneNo = user.phoneNo.toString();
+
+      firstname = lastname = rollno = regno = degree = branch = year = "";
+
+      if ( profile ){
+        console.log("lol");
+        if(profile.firstname) firstname = profile.firstname;
+        if(profile.lastname) lastname = profile.lastname;
+        if(profile.rollno) rollno = profile.rollno;
+        if(profile.regno) regno = profile.regno;
+        if(profile.degree) degree = profile.degree;
+        if(profile.branch) branch = profile.branch;
+        if(profile.year) year = profile.year;
+      }
+
       const obj = {
-        name : profile.name,
-        email : profile.email,
-        phoneNo : profile.phoneNo,
-        firstname: profile.firstname,
-        lastname: profile.lastname,
-        rollno: profile.rollno,
-        regno: profile.regno,
-        degree: profile.degree,
-        branch: profile.branch,
-        year: profile.year
+        name : name,
+        email : email,
+        phoneNo : phoneNo,
+        firstname: firstname,
+        lastname: lastname,
+        rollno: rollno,
+        regno: regno,
+        degree: degree,
+        branch: branch,
+        year: year
       }
 
       registrants.push(obj);

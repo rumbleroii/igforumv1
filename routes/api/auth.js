@@ -29,7 +29,7 @@ router.post('/login', async (req, res) => {
     }
 
     if(!instance){
-      return res.status(400).json({ errors: [{ msg: "Invalid Credentials" }] });
+      return res.status(400).json({ errors: [{ msg: "Organization / User does not exists" }] });
     }
 
     const payload = {
@@ -42,9 +42,7 @@ router.post('/login', async (req, res) => {
     jwt.sign(payload, process.env.JWTSECRET, { expiresIn : 360000 }, (err, token) => {
       if (err) {
         logger.error(err);
-        return res.status(500).json({
-          error : "Error during authentication ( JWT )"
-        });
+        return res.status(500).json({ errors: [{ msg: "Server Error ( JWT )" }] });
       }
        return res.status(200).json({
          msg:"Token Created", accessToken: token
@@ -53,9 +51,7 @@ router.post('/login', async (req, res) => {
 
   } catch ( err ) {
     logger.error(err);
-    return res.status(500).json({
-      error : "Server Error"
-    })
+    return res.status(500).json({ errors: [{ msg: "Server Error" }] });
   }
 })
 

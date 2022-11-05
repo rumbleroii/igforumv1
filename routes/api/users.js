@@ -28,29 +28,38 @@ router.post('/register', async (req, res) => {
 
     let user = await User.findOne({ name });
     if( user ){
-      return res.status(400).json({ errors: [{ msg: "Organization Already Exists" }] });
+      return res.status(400).json({ errors: [{ msg: "User Already Exists" }] });
     }
 
     user = await User.findOne({ email });
     if( user ){
-      return res.status(400).json({ errors: [{ msg: "Organization Already Exists" }] });
+      return res.status(400).json({ errors: [{ msg: "User Already Exists" }] });
     }
 
-   user = new User({
-      name,
-      email,
-      avatar,
-      phoneNo
-    });
+    user = await User.findOne({ phoneNo });
+    if( user ){
+        return res.status(400).json({ errors: [{ msg: "Phone No Already Exists" }] });
+    }
 
-    await user.save();
-    return res.status(200).json({
-      msg : "User created",
-      user: user
-    });
+    try {
+      user = new User({
+         name,
+         email,
+         avatar,
+         phoneNo
+       });
+
+       await user.save();
+       return res.status(200).json({
+         msg : "User created",
+         user: user
+       });
+    } catch ( err ){
+      console.log(err);
+    }
 })
 
-router.delete('/delete/:id', orgauth ,async (req, res) => {
+router.delete('/delete/:id', orgauth, async (req, res) => {
     const user = await User.findById(req.params.id);
 
     if(!user){

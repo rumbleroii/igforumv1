@@ -5,7 +5,8 @@ const auth = require("../../middleware/auth");
 // User profile
 router.get('/me', auth, async (req,res) => {
     try {
-        const profile = await Profile.findOne({user: req.user.id}).populate('user', ['name', 'avatar', 'phoneNo']);
+
+        const profile = await Profile.findOne({ user: req.user.id }).populate('user', ['name', 'avatar', 'phoneNo']);
         if(!profile){
             return res.status(400).json({msg: 'There is no profile for this user'});
         }
@@ -21,7 +22,7 @@ router.get('/me', auth, async (req,res) => {
 // Get profile
 router.get('/:id', auth, async (req,res) => {
     try {
-        const profile = await Profile.findOne({ user: req.param.id }).populate('user', ['name', 'avatar', 'phoneNo']);
+        const profile = await Profile.findOne({ user: req.params.id }).populate('user', ['name', 'avatar', 'phoneNo']);
 
         if(!profile){
             return res.status(400).json({msg: 'There is no profile for this user'});
@@ -53,6 +54,8 @@ router.post('/', auth, async (req, res) => {
 
     let profileFields = {};
 
+    profileFields.user = req.user.id;
+
     if(firstname) profileFields.firstname = firstname;
     if(lastname) profileFields.lastname = lastname;
     if(degree) profileFields.degree = degree;
@@ -65,18 +68,18 @@ router.post('/', auth, async (req, res) => {
     if(githubusername) profileFields.githubusername = githubusername;
 
     try {
-      let profile = await Profile.findOne({user: req.body.id})
+      let profile = await Profile.findOne({ user: req.user.id })
 
       if(profile){
           // Update Profile
           profile = await Profile.findOneAndUpdate({user: req.user.id}, {$set: profileFields}, { new: true })
-          return res.json(profile)
+          res.status(200).json({ msg: "Profile Updated", profile: profile });
       } else {
           profile = new Profile(profileFields);
       }
 
       await profile.save();
-      res.status(200).json(profile);
+      res.status(200).json({ msg: "Profile Created", profile: profile });
     } catch (err) {
       console.error(err.message)
       res.status(500).send('Server Error')

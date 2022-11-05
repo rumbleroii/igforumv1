@@ -35,6 +35,7 @@ app.use('/api/posts', require('./routes/api/posts'));
 app.use('/api/organization', require('./routes/api/organization'));
 app.use('/api/auth', require('./routes/api/auth'));
 app.use('/api/users', require('./routes/api/users'));
+app.use('/api/profile', require('./routes/api/profile'));
 
 
 // request to handle undefined or all other routes
@@ -47,10 +48,9 @@ app.get("*", async (req, res) => {
   } catch ( err ) {
     logger.error(err);
     res.status(500).json({
-      error: err
+      error: "Server Error"
     })
   }
-
 })
 
 app.listen(PORT, () =>{
