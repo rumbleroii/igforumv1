@@ -30,6 +30,10 @@ connectDB();
 // PORT
 const PORT = process.env.PORT || 3000;
 
+
+// Verify Login
+app.use('/api/verify', require('./routes/api/verify'));
+
 // Define routes
 app.use('/api/posts', require('./routes/api/posts'));
 app.use('/api/organization', require('./routes/api/organization'));

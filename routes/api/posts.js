@@ -15,7 +15,7 @@ const Organization = require('../../models/Organization');
 const Profile = require('../../models/Profile');
 
 // Get Post Timeline
-router.get("/", auth, async (req, res) => {
+router.get("/", orgauth, async (req, res) => {
   try {
     const posts = await Post.find({}).sort('-date');
 
