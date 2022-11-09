@@ -6,9 +6,6 @@ const connectDB = require('./config/db.js');
 const morgan = require('morgan');
 
 
-// Logging
-const logger = require('./logger');
-
 const app = express();
 
 // Middleware init
@@ -45,12 +42,12 @@ app.use('/api/profile', require('./routes/api/profile'));
 // request to handle undefined or all other routes
 app.get("*", async (req, res) => {
   try {
-    logger.error("Undefined Route Accessed");
+    console.log("Undefined Route Accessed");
     res.status(404).json({
       msg : "Route not found"
     })
   } catch ( err ) {
-    logger.error(err);
+    console.log(err);
     res.status(500).json({
       error: "Server Error"
     })
@@ -58,5 +55,5 @@ app.get("*", async (req, res) => {
 })
 
 app.listen(PORT, () =>{
-  logger.info(`[Info] Server running on PORT ${PORT}`);
+  console.log(`[Info] Server running on PORT ${PORT}`);
 })

@@ -1,59 +1,73 @@
-const router = require('express').Router();
+const router = require("express").Router();
 
 const Organization = require("../../models/Organization.js");
 const User = require("../../models/User.js");
 
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
-const logger = require('../../logger');
+// const OrganizationList = [
+//   "ig-nitw@student.nitw.ac.in",
+//   "csea@student.nitw.ac.in"
+// ]
 
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
-    const {
-      email,
-      isOrganization
-    } = req.body;
+    const { email, isOrganization } = req.body;
 
-    if (!email.includes("@student.nitw.ac.in") && !email.includes("@nitw.ac.in")) {
-      return res.status(400).json({ error : { msg: "Sign in through Institute Email" } });
+    if (
+      !email.includes("@student.nitw.ac.in") &&
+      !email.includes("@nitw.ac.in")
+    ) {
+      return res
+        .status(400)
+        .json({ error: { msg: "Sign in through Institute Email" } });
     }
 
     let instance = {};
 
-    if(isOrganization){
+    if (isOrganization) {
       instance = await Organization.findOne({ email });
-      logger.info("User is Organization");
+      console.log("User is Organization");
     } else {
       instance = await User.findOne({ email });
-      logger.info("User is not Organization");
+      console.log("User is not Organization");
     }
 
-    if(!instance){
-      return res.status(400).json({ errors: [{ msg: "Organization / User does not exists" }] });
+    if (!instance) {
+      return res
+        .status(400)
+        .json({ errors: [{ msg: "Organization / User does not exists" }] });
     }
 
     const payload = {
-      user : {
-        isOrganization : isOrganization,
-        id : instance.id,
-      }
-    }
+      user: {
+        isOrganization: isOrganization,
+        id: instance.id,
+      },
+    };
 
-    jwt.sign(payload, process.env.JWTSECRET, { expiresIn : 360000 }, (err, token) => {
-      if (err) {
-        logger.error(err);
-        return res.status(500).json({ errors: [{ msg: "Server Error ( JWT )" }] });
+    jwt.sign(
+      payload,
+      process.env.JWTSECRET,
+      { expiresIn: 360000 },
+      (err, token) => {
+        if (err) {
+          console.log(err);
+          return res
+            .status(500)
+            .json({ errors: [{ msg: "Server Error ( JWT )" }] });
+        }
+        return res.status(200).json({
+          msg: "Token Created",
+          accessToken: token,
+        });
       }
-       return res.status(200).json({
-         msg:"Token Created", accessToken: token
-       });
-    })
-
-  } catch ( err ) {
-    logger.error(err);
+    );
+  } catch (err) {
+    console.log(err);
     return res.status(500).json({ errors: [{ msg: "Server Error" }] });
   }
-})
+});
 
 // Logout is frontend
 

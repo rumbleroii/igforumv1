@@ -28,7 +28,11 @@ router.get("/", orgauth, async (req, res) => {
       let postObj = [];
 
       for(var i=0;i<posts.length;i++){
-        let {organization, title, body, likes, updated, id, registrants, duration, venue, date} = posts[i];
+        let { title, body, likes, updated, id, registrants, duration, venue, date} = posts[i];
+
+        const organization = Organization.findById(req.user.id);
+        console.log(organization);
+
 
         const instance = {
           organization: organization.name,
