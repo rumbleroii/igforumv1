@@ -1,54 +1,64 @@
-const router = require('express').Router();
+const router = require("express").Router();
 
-const fs = require('fs');
-const path = require('path');
-const shortid = require('shortid');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const fs = require("fs");
+const path = require("path");
+const shortid = require("shortid");
+const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
-let baseDir = path.join(__dirname, '/../../csv/');
+let baseDir = path.join(__dirname, "/../../csv/");
 
 const orgauth = require("../../middleware/orgauth");
 const auth = require("../../middleware/auth");
 
 const Post = require("../../models/Post");
-const Organization = require('../../models/Organization');
-const Profile = require('../../models/Profile');
+const Organization = require("../../models/Organization");
+const Profile = require("../../models/Profile");
 
 // Get Post Timeline
 router.get("/", orgauth, async (req, res) => {
   try {
-    const posts = await Post.find({}).sort('-date');
+    const posts = await Post.find({}).sort("-date");
 
     if (!posts) {
       return res.status(403).json({
-        msg: "No Posts"
+        msg: "No Posts",
       });
     } else {
-
       let postObj = [];
 
-      for(var i=0;i<posts.length;i++){
-        let { title, body, likes, updated, id, registrants, duration, venue, date} = posts[i];
+      for (var i = 0; i < posts.length; i++) {
+        let {
+          organization,
+          title,
+          body,
+          img,
+          likes,
+          updated,
+          id,
+          registrants,
+          duration,
+          venue,
+          date,
+        } = posts[i];
 
-        const organization = Organization.findById(req.user.id);
+        organization = await Organization.findById(organization.toString());
         console.log(organization);
 
-
         const instance = {
-          organization: organization.name,
+          organization: organization,
           title: title,
           body: body,
+          img: img,
           likes: likes.length,
           updated: updated,
           _id: id,
           registrants: registrants.length,
           duration: duration,
           venue: venue,
-          date: date
-        }
+          date: date,
+        };
 
         postObj.push(instance);
-
       }
 
       return res.status(200).json(postObj);
@@ -56,20 +66,21 @@ router.get("/", orgauth, async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({
-      msg : "Server Error"
+      msg: "Server Error",
     });
   }
 });
 
 // Create Post
 router.post("/", orgauth, async (req, res) => {
-  const { title, body, duration, venue } = req.body;
+  const { title, body, img, duration, venue } = req.body;
 
   const postField = {};
 
   postField.organization = req.user.id;
   if (title) postField.title = title;
   if (body) postField.body = body;
+  if (img) postField.img = img;
   if (duration) postField.duration = duration;
   if (venue) postField.venue = venue;
 
@@ -81,7 +92,7 @@ router.post("/", orgauth, async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({
-      msg : "Server Error"
+      msg: "Server Error",
     });
   }
 });
@@ -89,19 +100,19 @@ router.post("/", orgauth, async (req, res) => {
 // Update Post
 router.put("/:id", orgauth, async (req, res) => {
   try {
-
     const post = await Post.findById(req.params.id);
 
-    if(post.organization.toString() !== req.user.id){
-      return res.status(400).json({errors : "Not Authorized to edit"});
+    if (post.organization.toString() !== req.user.id) {
+      return res.status(400).json({ errors: "Not Authorized to edit" });
     }
 
-    const { title, body, duration, venue } = req.body;
+    const { title, body, img, duration, venue } = req.body;
 
     const postUpdated = post;
 
     if (title) postUpdated.title = title;
     if (body) postUpdated.body = body;
+    if (img) postUpdated.img = img;
     if (duration) postUpdated.duration = duration;
     if (venue) postUpdated.venue = venue;
 
@@ -110,6 +121,7 @@ router.put("/:id", orgauth, async (req, res) => {
         $set: {
           title: postUpdated.title,
           body: postUpdated.body,
+          img: postUpdated.img,
           duration: postUpdated.duration,
           venue: postUpdated.venue,
           updated: true,
@@ -118,11 +130,11 @@ router.put("/:id", orgauth, async (req, res) => {
 
       res.status(200).json(await Post.findById(req.params.id));
     } else {
-      res.status(403).json({ msg : "You can only update posts by you" });
+      res.status(403).json({ msg: "You can only update posts by you" });
     }
   } catch (err) {
     res.status(500).json({
-      msg : err
+      msg: err,
     });
   }
 });
@@ -130,19 +142,18 @@ router.put("/:id", orgauth, async (req, res) => {
 // Delete Post
 router.delete("/:id", orgauth, async (req, res) => {
   try {
-
-    if(post.organization !== req.user.id){
-      return res.status(400).json({errors : "Not Authorized to delete"});
+    if (post.organization !== req.user.id) {
+      return res.status(400).json({ errors: "Not Authorized to delete" });
     }
 
     if (post.userId === req.body.userId) {
       await post.deleteOne({ _id: req.params.id });
-      res.status(200).json({ msg : "Post Deleted" });
+      res.status(200).json({ msg: "Post Deleted" });
     } else {
-      res.status(403).json({ msg : "Error During Deleting Post" });
+      res.status(403).json({ msg: "Error During Deleting Post" });
     }
   } catch (err) {
-    res.status(500).json({ msg : err });
+    res.status(500).json({ msg: err });
   }
 });
 
@@ -153,10 +164,10 @@ router.put("/like/:id", auth, async (req, res) => {
 
     if (!post.likes.includes(req.user.id)) {
       await post.updateOne({ $push: { likes: req.user.id } });
-      res.status(200).json({msg: "The post has been liked" });
+      res.status(200).json({ msg: "The post has been liked" });
     } else {
       await post.updateOne({ $pull: { likes: req.user.id } });
-      res.status(200).json({msg: "The post has been disliked" });
+      res.status(200).json({ msg: "The post has been disliked" });
     }
   } catch (err) {
     console.log(err);
@@ -166,127 +177,148 @@ router.put("/like/:id", auth, async (req, res) => {
 
 // Register for event
 router.put("/register/:id", auth, async (req, res) => {
-
-  const post = await Post.findOne({ _id : req.params.id });
+  const post = await Post.findOne({ _id: req.params.id });
   let registrant = false;
 
   // checking is registerant is present
-  if(post.registrants){
-    for(var i=0;i<post.registrants.length;i++){
-      if(post.registrants[i]._id.toString() === req.user.id){
+  if (post.registrants) {
+    for (var i = 0; i < post.registrants.length; i++) {
+      if (post.registrants[i]._id.toString() === req.user.id) {
         registrant = true;
         break;
       }
     }
   }
 
-
   const user = await User.findById(req.user.id);
 
-  if(!registrant){
-    await post.updateOne({ $push: { registrants : { user : user } }});
+  if (!registrant) {
+    await post.updateOne({ $push: { registrants: { user: user } } });
     const savedPost = await post.save();
-    res.status(200).json({msg: "Registered for event", post: savedPost});
+    res.status(200).json({ msg: "Registered for event", post: savedPost });
   } else {
-    await post.updateOne({ $pull: { registrants : { user : user } }});
+    await post.updateOne({ $pull: { registrants: { user: user } } });
     const savedPost = await post.save();
-    res.status(200).json({msg: "Unregistered for event", post: savedPost});
+    res.status(200).json({ msg: "Unregistered for event", post: savedPost });
   }
-})
+});
 
 // Registerants of the event
 router.get("/registrants/:id", orgauth, async (req, res) => {
-  const post = await Post.findOne({ _id : req.params.id });
+  const post = await Post.findOne({ _id: req.params.id });
 
-  if(post.organization.toString() !== req.user.id){
-    return res.status(400).json({errors : "Not Authorized to view"});
+  if (post.organization.toString() !== req.user.id) {
+    return res.status(400).json({ errors: "Not Authorized to view" });
   }
 
   let registrants = [];
 
-  for(var i=0;i<post.registrants.length;i++){
-      const user = await User.findById(post.registrants[i].user._id.toString());
-      registrants.push(user);
+  for (var i = 0; i < post.registrants.length; i++) {
+    const user = await User.findById(post.registrants[i].user._id.toString());
+    registrants.push(user);
   }
 
   res.status(200).json({ registrants: registrants });
-})
+});
 
 // Download CSV
-router.get("/download/:id",  orgauth, async (req, res) => {
-  const post = await Post.findOne({ _id : req.params.id });
+router.get("/download/:id", orgauth, async (req, res) => {
+  const post = await Post.findOne({ _id: req.params.id });
 
-  if(post.organization.toString() !== req.user.id){
-    return res.status(400).json({errors : "Not Authorized to download"});
+  if (post.organization.toString() !== req.user.id) {
+    return res.status(400).json({ errors: "Not Authorized to download" });
   }
 
   let registrants = [];
 
-  for(var i=0;i<post.registrants.length;i++){
-      const user = await User.findById(post.registrants[i].user._id.toString());
-      const profile = await Profile.findOne({ user: user }).populate('user', ['name', 'avatar', 'phoneNo']);
+  for (var i = 0; i < post.registrants.length; i++) {
+    const user = await User.findById(post.registrants[i].user._id.toString());
+    const profile = await Profile.findOne({ user: user }).populate("user", [
+      "name",
+      "avatar",
+      "phoneNo",
+    ]);
 
-      let name, email, phoneNo, firstname, lastname, rollno, regno, degree, branch, year;
-      name = user.name;
-      email = user.email;
-      phoneNo = user.phoneNo.toString();
+    let name,
+      email,
+      phoneNo,
+      firstname,
+      lastname,
+      rollno,
+      regno,
+      degree,
+      branch,
+      year;
+    name = user.name;
+    email = user.email;
+    phoneNo = user.phoneNo.toString();
 
-      firstname = lastname = rollno = regno = degree = branch = year = "";
+    firstname = lastname = rollno = regno = degree = branch = year = "";
 
-      if ( profile ){
-        console.log("lol");
-        if(profile.firstname) firstname = profile.firstname;
-        if(profile.lastname) lastname = profile.lastname;
-        if(profile.rollno) rollno = profile.rollno;
-        if(profile.regno) regno = profile.regno;
-        if(profile.degree) degree = profile.degree;
-        if(profile.branch) branch = profile.branch;
-        if(profile.year) year = profile.year;
-      }
+    if (profile) {
+      console.log("lol");
+      if (profile.firstname) firstname = profile.firstname;
+      if (profile.lastname) lastname = profile.lastname;
+      if (profile.rollno) rollno = profile.rollno;
+      if (profile.regno) regno = profile.regno;
+      if (profile.degree) degree = profile.degree;
+      if (profile.branch) branch = profile.branch;
+      if (profile.year) year = profile.year;
+    }
 
-      const obj = {
-        name : name,
-        email : email,
-        phoneNo : phoneNo,
-        firstname: firstname,
-        lastname: lastname,
-        rollno: rollno,
-        regno: regno,
-        degree: degree,
-        branch: branch,
-        year: year
-      }
+    const obj = {
+      name: name,
+      email: email,
+      phoneNo: phoneNo,
+      firstname: firstname,
+      lastname: lastname,
+      rollno: rollno,
+      regno: regno,
+      degree: degree,
+      branch: branch,
+      year: year,
+    };
 
-      registrants.push(obj);
+    registrants.push(obj);
   }
 
-
-  const fileName = post.title.toString()+"_"+shortid.generate()+".csv";
+  const fileName = post.title.toString() + "_" + shortid.generate() + ".csv";
   const fileLocation = `${baseDir}${fileName}`;
 
-  await fs.open(fileLocation, 'w', function (err) {
+  await fs.open(fileLocation, "w", function (err) {
     if (err) console.log(err);
-    console.log('File Created!');
+    console.log("File Created!");
   });
 
   const csvWriter = createCsvWriter({
     path: fileLocation,
     header: [
-      'name', 'email', 'phoneNo', 'firstname', 'lastname', 'rollno', 'regno', 'degree', 'branch', 'year'
-    ].map((item) => ({id: item, title: item}))
-  })
+      "name",
+      "email",
+      "phoneNo",
+      "firstname",
+      "lastname",
+      "rollno",
+      "regno",
+      "degree",
+      "branch",
+      "year",
+    ].map((item) => ({ id: item, title: item })),
+  });
 
   try {
-    await csvWriter.writeRecords(registrants).then(() => {
-        console.log('Saved succesfully');
-    })
-    .catch((err) => {
-        console.log('Save failed', err);
-    });
+    await csvWriter
+      .writeRecords(registrants)
+      .then(() => {
+        console.log("Saved succesfully");
+      })
+      .catch((err) => {
+        console.log("Save failed", err);
+      });
   } catch (err) {
     console.log(err);
   }
 
   res.status(200).download(fileLocation);
-})
+});
 module.exports = router;

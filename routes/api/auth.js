@@ -27,10 +27,8 @@ router.post("/login", async (req, res) => {
 
     if (isOrganization) {
       instance = await Organization.findOne({ email });
-      console.log("User is Organization");
     } else {
       instance = await User.findOne({ email });
-      console.log("User is not Organization");
     }
 
     if (!instance) {
