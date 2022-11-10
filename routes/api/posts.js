@@ -42,7 +42,7 @@ router.get("/", orgauth, async (req, res) => {
         } = posts[i];
 
         organization = await Organization.findById(organization.toString());
-        console.log(organization);
+        // console.log(organization);
 
         const instance = {
           organization: organization,
@@ -71,18 +71,77 @@ router.get("/", orgauth, async (req, res) => {
   }
 });
 
+// Get Post Per Organization ( Client )
+router.get("/org", orgauth, async (req, res) => {
+  try {
+    const posts = await Post.find({}).sort("-date");
+
+    if (!posts) {
+      return res.status(403).json({
+        msg: "No Posts",
+      });
+    } else {
+      let postObj = [];
+
+      for (var i = 0; i < posts.length; i++) {
+        let {
+          organization,
+          title,
+          body,
+          img,
+          likes,
+          updated,
+          id,
+          registrants,
+          duration,
+          venue,
+          date,
+        } = posts[i];
+
+        if (organization.toString() === req.user.id) {
+          organization = await Organization.findById(organization.toString());
+
+          const instance = {
+            organization: organization.name,
+            title: title,
+            body: body,
+            img: img,
+            likes: likes.length,
+            updated: updated,
+            _id: id,
+            registrants: registrants.length,
+            duration: duration,
+            venue: venue,
+            date: date,
+          };
+
+          postObj.push(instance);
+        }
+      }
+
+      return res.status(200).json(postObj);
+    }
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({
+      msg: "Server Error",
+    });
+  }
+});
+
 // Create Post
 router.post("/", orgauth, async (req, res) => {
-  const { title, body, img, duration, venue } = req.body;
+  const { title, body, picPath, duration, venue, date } = req.body;
 
   const postField = {};
 
   postField.organization = req.user.id;
   if (title) postField.title = title;
   if (body) postField.body = body;
-  if (img) postField.img = img;
+  if (picPath) postField.img = picPath;
   if (duration) postField.duration = duration;
   if (venue) postField.venue = venue;
+  if (date) postField.date = date;
 
   // Creating Post
   const newPost = new Post(postField);
@@ -142,7 +201,9 @@ router.put("/:id", orgauth, async (req, res) => {
 // Delete Post
 router.delete("/:id", orgauth, async (req, res) => {
   try {
-    if (post.organization !== req.user.id) {
+    const post = await Post.findById(req.params.id);
+
+    if (post.organization.toString() !== req.user.id) {
       return res.status(400).json({ errors: "Not Authorized to delete" });
     }
 
@@ -222,12 +283,12 @@ router.get("/registrants/:id", orgauth, async (req, res) => {
 });
 
 // Download CSV
-router.get("/download/:id", orgauth, async (req, res) => {
+router.get("/download/:id", async (req, res) => {
   const post = await Post.findOne({ _id: req.params.id });
 
-  if (post.organization.toString() !== req.user.id) {
-    return res.status(400).json({ errors: "Not Authorized to download" });
-  }
+  // if (post.organization.toString() !== req.user.id) {
+  //   return res.status(400).json({ errors: "Not Authorized to download" });
+  // }
 
   let registrants = [];
 
