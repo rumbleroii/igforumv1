@@ -5,7 +5,8 @@ const path = require("path");
 const shortid = require("shortid");
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
-let baseDir = path.join(__dirname, "/../../csv/");
+let baseDirCsv = path.join(__dirname, "/../../csv/");
+let baseDirImages = path.join(__dirname, "../../images/");
 
 const orgauth = require("../../middleware/orgauth");
 const auth = require("../../middleware/auth");
@@ -13,6 +14,8 @@ const auth = require("../../middleware/auth");
 const Post = require("../../models/Post");
 const Organization = require("../../models/Organization");
 const Profile = require("../../models/Profile");
+
+const upload = require("../../config/imageUploader.js");
 
 // Get Post Timeline
 router.get("/", orgauth, async (req, res) => {
@@ -130,8 +133,12 @@ router.get("/org", orgauth, async (req, res) => {
 });
 
 // Create Post
-router.post("/", orgauth, async (req, res) => {
-  const { title, body, picPath, duration, venue, date } = req.body;
+router.post("/", orgauth, upload.single("image"), async (req, res) => {
+  const { title, body, duration, venue, date } = JSON.parse(
+    req.body.postDetails
+  );
+
+  const picPath = "images/" + req.file.filename;
 
   const postField = {};
 
@@ -165,13 +172,16 @@ router.put("/:id", orgauth, async (req, res) => {
       return res.status(400).json({ errors: "Not Authorized to edit" });
     }
 
-    const { title, body, img, duration, venue } = req.body;
+    const { title, body, duration, venue, date } = JSON.parse(
+      req.body.postDetails
+    );
 
+    const picPath = "images/" + req.file.filename;
     const postUpdated = post;
 
     if (title) postUpdated.title = title;
     if (body) postUpdated.body = body;
-    if (img) postUpdated.img = img;
+    if (img) postUpdated.img = picPath;
     if (duration) postUpdated.duration = duration;
     if (venue) postUpdated.venue = venue;
 
@@ -344,7 +354,7 @@ router.get("/download/:id", async (req, res) => {
   }
 
   const fileName = post.title.toString() + "_" + shortid.generate() + ".csv";
-  const fileLocation = `${baseDir}${fileName}`;
+  const fileLocation = `${baseDirCsv}${fileName}`;
 
   await fs.open(fileLocation, "w", function (err) {
     if (err) console.log(err);
@@ -382,4 +392,5 @@ router.get("/download/:id", async (req, res) => {
 
   res.status(200).download(fileLocation);
 });
+
 module.exports = router;
