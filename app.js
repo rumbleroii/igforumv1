@@ -7,8 +7,6 @@ const morgan = require("morgan");
 
 const app = express();
 
-console.log(__dirname);
-
 // Middleware init
 app.use(cors());
 

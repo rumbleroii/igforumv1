@@ -138,7 +138,13 @@ router.post("/", orgauth, upload.single("image"), async (req, res) => {
     req.body.postDetails
   );
 
-  const picPath = "images/" + req.file.filename;
+  let picPath;
+
+  if (req.file) {
+    picPath = "images/" + req.file.filename;
+  } else {
+    picPath = null;
+  }
 
   const postField = {};
 
@@ -149,6 +155,8 @@ router.post("/", orgauth, upload.single("image"), async (req, res) => {
   if (duration) postField.duration = duration;
   if (venue) postField.venue = venue;
   if (date) postField.date = date;
+
+  console.log(date);
 
   // Creating Post
   const newPost = new Post(postField);
@@ -164,7 +172,7 @@ router.post("/", orgauth, upload.single("image"), async (req, res) => {
 });
 
 // Update Post
-router.put("/:id", orgauth, async (req, res) => {
+router.put("/:id", orgauth, upload.single("image"), async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -176,35 +184,40 @@ router.put("/:id", orgauth, async (req, res) => {
       req.body.postDetails
     );
 
-    const picPath = "images/" + req.file.filename;
+    if (req.file) {
+      picPath = "images/" + req.file.filename;
+    } else {
+      picPath = null;
+    }
     const postUpdated = post;
 
     if (title) postUpdated.title = title;
     if (body) postUpdated.body = body;
-    if (img) postUpdated.img = picPath;
+    if (picPath) postUpdated.picPath = picPath;
     if (duration) postUpdated.duration = duration;
     if (venue) postUpdated.venue = venue;
+    if (date) postUpdated.date = date;
 
     if (post.userId === req.body.userId) {
       await post.updateOne({
         $set: {
           title: postUpdated.title,
           body: postUpdated.body,
-          img: postUpdated.img,
+          img: postUpdated.picPath,
           duration: postUpdated.duration,
           venue: postUpdated.venue,
+          date: postUpdated.date,
           updated: true,
         },
       });
 
-      res.status(200).json(await Post.findById(req.params.id));
+      return res.status(200).json({ msg: "Post Edited" });
     } else {
-      res.status(403).json({ msg: "You can only update posts by you" });
+      return res.status(403).json({ msg: "You can only update posts by you" });
     }
   } catch (err) {
-    res.status(500).json({
-      msg: err,
-    });
+    console.log(err);
+    return res.status(500).json({ msg: err });
   }
 });
 
@@ -219,12 +232,12 @@ router.delete("/:id", orgauth, async (req, res) => {
 
     if (post.userId === req.body.userId) {
       await post.deleteOne({ _id: req.params.id });
-      res.status(200).json({ msg: "Post Deleted" });
+      return res.status(200).json({ msg: "Post Deleted" });
     } else {
-      res.status(403).json({ msg: "Error During Deleting Post" });
+      return res.status(403).json({ msg: "Error During Deleting Post" });
     }
   } catch (err) {
-    res.status(500).json({ msg: err });
+    return res.status(500).json({ msg: err });
   }
 });
 
