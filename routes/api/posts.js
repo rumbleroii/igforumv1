@@ -272,9 +272,10 @@ router.put("/register/:id", auth, async (req, res) => {
   let registrant = false;
 
   // checking is registerant is present
+
   if (post.registrants) {
     for (var i = 0; i < post.registrants.length; i++) {
-      if (post.registrants[i]._id.toString() === req.user.id) {
+      if (post.registrants[i].user.toString() === req.user.id) {
         registrant = true;
         break;
       }
@@ -289,7 +290,7 @@ router.put("/register/:id", auth, async (req, res) => {
 
     // Send Mail
     try {
-      confirmMail(req.user.email, post)
+      confirmMail(user.email, post)
         .then(() => {
           res
             .status(200)

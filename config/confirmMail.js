@@ -1,9 +1,11 @@
 const nodemailer = require("nodemailer");
+const User = require("../models/User");
 
 const user = "IGForum_DontReply@outlook.com";
 const pass = "igforum1@";
 
 module.exports = async (reciverMail, post) => {
+
   const transporter = nodemailer.createTransport({
     service: "hotmail",
     auth: {
@@ -20,6 +22,7 @@ module.exports = async (reciverMail, post) => {
   };
 
   transporter.sendMail(message, (err, info) => {
+    console.log(info);
     if (err) {
       console.log(err);
     } else {
