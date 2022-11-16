@@ -17,6 +17,8 @@ const Profile = require("../../models/Profile");
 
 const upload = require("../../config/imageUploader.js");
 
+const confirmMail = require("../../config/confirmMail.js");
+
 // Get Post Timeline
 router.get("/", orgauth, async (req, res) => {
   try {
@@ -284,7 +286,21 @@ router.put("/register/:id", auth, async (req, res) => {
   if (!registrant) {
     await post.updateOne({ $push: { registrants: { user: user } } });
     const savedPost = await post.save();
-    res.status(200).json({ msg: "Registered for event", post: savedPost });
+
+    // Send Mail
+    try {
+      confirmMail(req.user.email, post)
+        .then(() => {
+          res
+            .status(200)
+            .json({ msg: "Registered for event", post: savedPost });
+        })
+        .catch((err) => {
+          res.status(200).json({ msg: err });
+        });
+    } catch (err) {
+      res.status(500).json({ msg: "Error Sending Email" });
+    }
   } else {
     await post.updateOne({ $pull: { registrants: { user: user } } });
     const savedPost = await post.save();
