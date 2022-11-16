@@ -44,7 +44,7 @@ const PostSchema = new mongoose.Schema({
     },
   ],
 
-  duration: {
+  deadline: {
     type: String,
     max: 10,
   },
@@ -52,6 +52,11 @@ const PostSchema = new mongoose.Schema({
   venue: {
     type: String,
     max: 30,
+  },
+
+  waLink: {
+    type: String,
+    default: ""
   },
 
   date: {
