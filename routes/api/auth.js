@@ -12,22 +12,23 @@ const jwt = require("jsonwebtoken");
 
 router.post("/login", async (req, res) => {
   try {
-    const { email, isOrganization } = req.body;
+    const { email } = req.body;
 
     if (
       !email.includes("@student.nitw.ac.in") &&
       !email.includes("@nitw.ac.in")
     ) {
-      return res
-        .status(400)
-        .json({ error: { msg: "Sign in through Institute Email" } });
+      console.log("Wrong Email");
+      return res.status(400).json({ msg: "Sign in through Institute Email" });
     }
 
     let instance = {};
+    let isOrganization = false;
 
-    if (isOrganization) {
-      instance = await Organization.findOne({ email });
-    } else {
+    instance = await Organization.findOne({ email });
+    if (instance) {
+      isOrganization = true;
+    } else if (!isOrganization && !instance) {
       instance = await User.findOne({ email });
     }
 

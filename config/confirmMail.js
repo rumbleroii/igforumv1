@@ -1,8 +1,8 @@
+require("dotenv").config();
 const nodemailer = require("nodemailer");
-const User = require("../models/User");
 
-const user = "IGForum_DontReply@outlook.com";
-const pass = "igforum1@";
+const user = process.env.user;
+const pass = process.env.pass;
 
 module.exports = async (reciverMail, post) => {
   return new Promise((resolve, reject) => {

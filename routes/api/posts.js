@@ -328,7 +328,7 @@ router.get("/registrants/:id", orgauth, async (req, res) => {
 });
 
 // Download CSV
-router.get("/download/:id", async (req, res) => {
+router.get("/download/:id", orgauth, async (req, res) => {
   const post = await Post.findOne({ _id: req.params.id });
 
   if (post.organization.toString() !== req.user.id) {
