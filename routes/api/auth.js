@@ -12,7 +12,7 @@ const jwt = require("jsonwebtoken");
 
 router.post("/login", async (req, res) => {
   try {
-    const { email } = req.body.toLowerCase();
+    const { email } = req.body;
 
     if (
       !email.includes("@student.nitw.ac.in") &&
