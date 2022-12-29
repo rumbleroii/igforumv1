@@ -1,11 +1,12 @@
 const router = require("express").Router();
 
+
+// Models
 const User = require("../../models/User.js");
 const Profile = require("../../models/Profile.js");
 
+// Helper
 const upload = require("../../config/imageUploader.js");
-
-const orgauth = require("../../middleware/orgauth");
 
 router.get("/", async (req, res) => {
   const users = await User.find({});
@@ -15,7 +16,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  const { name, email, avatar, phoneNo } = req.body;
+  const { name, email, avatar, phoneNo } = req.body.data;
 
   if (
     !email.includes("@student.nitw.ac.in") &&
@@ -61,7 +62,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.delete("/delete/:id", orgauth, async (req, res) => {
+router.delete("/delete/:id", async (req, res) => {
   const user = await User.findById(req.params.id);
 
   if (!user) {
@@ -70,8 +71,11 @@ router.delete("/delete/:id", orgauth, async (req, res) => {
 
   await User.deleteOne({ _id: req.params.id });
   await Profile.remove(user);
+
   return res.status(200).json({ msg: "User Deleted successfully" });
+
 });
+
 
 router.post("/upload", upload.single("image"), async (req, res) => {
   return res.status(200).json({ msg: "File Uploaded", path: req.file.path });

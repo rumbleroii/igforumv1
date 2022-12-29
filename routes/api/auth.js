@@ -1,18 +1,19 @@
 const router = require("express").Router();
 
-const Organization = require("../../models/Organization.js");
+
+// Modules
 const User = require("../../models/User.js");
 
+
+// Helper
 const jwt = require("jsonwebtoken");
 
-// const OrganizationList = [
-//   "ig-nitw@student.nitw.ac.in",
-//   "csea@student.nitw.ac.in"
-// ]
+// const nodemailer = require('nodemailer');
 
 router.post("/login", async (req, res) => {
   try {
-    const { email } = req.body;
+
+    const { email } = req.body.data;
 
     if (
       !email.includes("@student.nitw.ac.in") &&
@@ -22,16 +23,8 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ msg: "Sign in through Institute Email" });
     }
 
-    let instance = {};
-    let isOrganization = false;
-
-    instance = await Organization.findOne({ email });
-    if (instance) {
-      isOrganization = true;
-    } else if (!isOrganization && !instance) {
-      instance = await User.findOne({ email });
-    }
-
+    const instance = await User.findOne({ email });
+    
     if (!instance) {
       return res
         .status(400)
@@ -40,8 +33,8 @@ router.post("/login", async (req, res) => {
 
     const payload = {
       user: {
-        isOrganization: isOrganization,
         id: instance.id,
+        isOrganization: instance.isOrganization
       },
     };
 
@@ -67,7 +60,5 @@ router.post("/login", async (req, res) => {
     return res.status(500).json({ errors: [{ msg: "Server Error" }] });
   }
 });
-
-// Logout is frontend
 
 module.exports = router;

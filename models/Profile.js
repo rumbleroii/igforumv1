@@ -5,9 +5,11 @@ const ProfileSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user'
     },
+
     firstname: {
         type: String
     },
+
     lastname: {
         type: String
     },
@@ -57,7 +59,7 @@ const ProfileSchema = new mongoose.Schema({
         type: String,
     },
 
-    linkedin: {
+    linkedinusername: {
         type: String
     },
 

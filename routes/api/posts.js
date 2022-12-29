@@ -5,35 +5,36 @@ const path = require("path");
 const shortid = require("shortid");
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
-let baseDirCsv = path.join(__dirname, "/../../csv/");
+let baseDirCsv = path.join(__dirname, "/../../public/csv/");
 let baseDirImages = path.join(__dirname, "../../images/");
 
-const orgauth = require("../../middleware/orgauth");
 const auth = require("../../middleware/auth");
 
 const Post = require("../../models/Post");
-const Organization = require("../../models/Organization");
 const Profile = require("../../models/Profile");
+const User = require("../../models/User");
 
 const upload = require("../../config/imageUploader.js");
 
 const confirmMail = require("../../config/confirmMail.js");
 
+
 // Get Post Timeline
-router.get("/", orgauth, async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
     const posts = await Post.find({}).sort("-date");
 
+    let postObj = [];
+    
     if (!posts) {
       return res.status(403).json({
         msg: "No Posts",
       });
     } else {
-      let postObj = [];
-
+  
       for (var i = 0; i < posts.length; i++) {
         let {
-          organization,
+          user,
           title,
           body,
           img,
@@ -45,12 +46,33 @@ router.get("/", orgauth, async (req, res) => {
           waLink,
           venue,
           date,
+          isLiked = false,
+          isRegistered = false,
         } = posts[i];
 
-        organization = await Organization.findById(organization.toString());
+        userInfo = await User.findById(req.user.id);
+
+
+        if (posts[i].registrants) {
+          for (var j = 0; j < posts[i].registrants.length; j++) {
+            if (posts[i].registrants[j].user.toString() === req.user.id) {
+              isRegistered = true;
+              break;
+            }
+          }
+        }
+
+        if (posts[i].likes) {
+          for (var j = 0; j < posts[i].likes.length; j++) {
+            if (posts[i].likes[j].toString() === req.user.id) {
+              isLiked = true;
+              break;
+            }
+          }
+        }
 
         const instance = {
-          organization: organization.name,
+          user: userInfo.name,
           title: title,
           body: body,
           img: img,
@@ -62,6 +84,8 @@ router.get("/", orgauth, async (req, res) => {
           deadline: deadline,
           venue: venue,
           date: date,
+          isLiked: isLiked,
+          isRegistered: isRegistered
         };
 
         postObj.push(instance);
@@ -77,21 +101,18 @@ router.get("/", orgauth, async (req, res) => {
   }
 });
 
-// Get Post Per Organization ( Client )
-router.get("/org", orgauth, async (req, res) => {
+router.get("/id/:id", auth, async (req, res) => {
   try {
-    const posts = await Post.find({}).sort("-date");
-
-    if (!posts) {
+    const post = await Post.findById(req.params.id);
+    
+    if (!post) {
       return res.status(403).json({
         msg: "No Posts",
       });
-    } else {
-      let postObj = [];
+    } 
 
-      for (var i = 0; i < posts.length; i++) {
         let {
-          organization,
+          user,
           title,
           body,
           img,
@@ -103,32 +124,132 @@ router.get("/org", orgauth, async (req, res) => {
           waLink,
           venue,
           date,
+          isLiked = false,
+          isRegistered = false,
+        } = post;
+
+        userInfo = await User.findById(req.user.id);
+
+        if (post.registrants) {
+          for (var j = 0; j < post.registrants.length; j++) {
+            if (post.registrants[j].user.toString() === req.user.id) {
+              isRegistered = true;
+              break;
+            }
+          }
+        }
+
+        if (post.likes) {
+          for (var j = 0; j < post.likes.length; j++) {
+            if (post.likes[j].toString() === req.user.id) {
+              isLiked = true;
+              break;
+            }
+          }
+        }
+
+        const instance = {
+          user: userInfo.name,
+          title: title,
+          body: body,
+          img: img,
+          likes: likes.length,
+          updated: updated,
+          _id: id,
+          registrants: registrants.length,
+          waLink: waLink,
+          deadline: deadline,
+          venue: venue,
+          date: date,
+          isLiked: isLiked,
+          isRegistered: isRegistered
+        };
+      
+
+    return res.status(200).json(instance);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({
+      msg: "Server Error",
+    });
+  }
+});
+
+// Get Post Per Organization ( Client )
+router.get("/org", auth, async (req, res) => {
+  try {
+    let posts = await Post.find({}).sort("-date");
+    const user = await User.findById(req.user.id);
+
+    let postObj = [];
+
+    if (!posts) {
+      return res.status(403).json({
+        msg: "No Posts",
+      });
+    } else {
+   
+      posts = posts.filter((item) => item.user.toString() === req.user.id);
+
+      for (var i = 0; i < posts.length; i++) {
+        let {
+          user,
+          title,
+          body,
+          img,
+          likes,
+          updated,
+          id,
+          registrants,
+          deadline,
+          waLink,
+          venue,
+          date,
+          isLiked = false,
+          isRegistered = false,
         } = posts[i];
 
-        if (organization.toString() === req.user.id) {
-          organization = await Organization.findById(organization.toString());
-
-          const instance = {
-            organization: organization.name,
-            title: title,
-            body: body,
-            img: img,
-            likes: likes.length,
-            updated: updated,
-            _id: id,
-            registrants: registrants.length,
-            waLink: waLink,
-            deadline: deadline,
-            venue: venue,
-            date: date,
-          };
-
-          postObj.push(instance);
+        if (posts[i].registrants) {
+          for (var j = 0; j < posts[i].registrants.length; j++) {
+            if (posts[i].registrants[j].user.toString() === req.user.id) {
+              isRegistered = true;
+              break;
+            }
+          }
         }
-      }
 
-      return res.status(200).json(postObj);
+        if (posts[i].likes) {
+          for (var j = 0; j < posts[i].likes.length; j++) {
+            if (posts[i].likes[j].toString() === req.user.id) {
+              isLiked = true;
+              break;
+            }
+          }
+        }
+
+        const instance = {
+          user: user.name,
+          title: title,
+          body: body,
+          img: img,
+          likes: likes.length,
+          updated: updated,
+          _id: id,
+          registrants: registrants.length,
+          waLink: waLink,
+          deadline: deadline,
+          venue: venue,
+          date: date,
+          isLiked: isLiked,
+          isRegistered: isRegistered
+        };
+
+        postObj.push(instance);
+      }
     }
+
+    return res.status(200).json(postObj);
+
   } catch (err) {
     console.error(err.message);
     res.status(500).json({
@@ -138,7 +259,10 @@ router.get("/org", orgauth, async (req, res) => {
 });
 
 // Create Post
-router.post("/", orgauth, upload.single("image"), async (req, res) => {
+router.post("/", auth, upload.single("image"), async (req, res) => {
+
+  if(req.user.isOrganization === false) return res.status(401).json({ msg: "Server Error" });
+
   const { title, body, deadline, waLink, venue, date } = JSON.parse(
     req.body.postDetails
   );
@@ -153,7 +277,7 @@ router.post("/", orgauth, upload.single("image"), async (req, res) => {
 
   const postField = {};
 
-  postField.organization = req.user.id;
+  postField.user = req.user.id;
   if (title) postField.title = title;
   if (body) postField.body = body;
   if (picPath) postField.img = picPath;
@@ -178,11 +302,13 @@ router.post("/", orgauth, upload.single("image"), async (req, res) => {
 });
 
 // Update Post
-router.put("/:id", orgauth, upload.single("image"), async (req, res) => {
+router.put("/:id", auth, upload.single("image"), async (req, res) => {
   try {
+    if(req.user.isOrganization === false) return res.status(401).json({ msg: "Server Error" });
+
     const post = await Post.findById(req.params.id);
 
-    if (post.organization.toString() !== req.user.id) {
+    if (post.user.toString() !== req.user.id) {
       return res.status(400).json({ errors: "Not Authorized to edit" });
     }
 
@@ -229,11 +355,13 @@ router.put("/:id", orgauth, upload.single("image"), async (req, res) => {
 });
 
 // Delete Post
-router.delete("/:id", orgauth, async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
+    if(req.user.isOrganization === false) return res.status(401).json({ msg: "Server Error" });
+
     const post = await Post.findById(req.params.id);
 
-    if (post.organization.toString() !== req.user.id) {
+    if (post.user.toString() !== req.user.id) {
       return res.status(400).json({ errors: "Not Authorized to delete" });
     }
 
@@ -287,21 +415,8 @@ router.put("/register/:id", auth, async (req, res) => {
   if (!registrant) {
     await post.updateOne({ $push: { registrants: { user: user } } });
     const savedPost = await post.save();
-
-    // Send Mail
-    try {
-      confirmMail(user.email, post)
-        .then(() => {
-          res
-            .status(200)
-            .json({ msg: "Registered for event", post: savedPost });
-        })
-        .catch((err) => {
-          res.status(200).json({ msg: err });
-        });
-    } catch (err) {
-      res.status(500).json({ msg: "Error Sending Email" });
-    }
+    res.status(200).json({ msg: "Registered for event", post: savedPost });
+    
   } else {
     await post.updateOne({ $pull: { registrants: { user: user } } });
     const savedPost = await post.save();
@@ -310,10 +425,10 @@ router.put("/register/:id", auth, async (req, res) => {
 });
 
 // Registerants of the event
-router.get("/registrants/:id", orgauth, async (req, res) => {
+router.get("/registrants/:id", auth, async (req, res) => {
   const post = await Post.findOne({ _id: req.params.id });
 
-  if (post.organization.toString() !== req.user.id) {
+  if (post.user.toString() !== req.user.id) {
     return res.status(400).json({ errors: "Not Authorized to view" });
   }
 
@@ -328,10 +443,12 @@ router.get("/registrants/:id", orgauth, async (req, res) => {
 });
 
 // Download CSV
-router.get("/download/:id", orgauth, async (req, res) => {
+router.get("/download/:id", auth, async (req, res) => {
+  if(req.user.isOrganization === false) return res.status(401).json({ msg: "Server Error" });
+
   const post = await Post.findOne({ _id: req.params.id });
 
-  if (post.organization.toString() !== req.user.id) {
+  if (post.user.toString() !== req.user.id) {
     return res.status(400).json({ errors: "Not Authorized to download" });
   }
 
@@ -355,6 +472,7 @@ router.get("/download/:id", orgauth, async (req, res) => {
       degree,
       branch,
       year;
+    
     name = user.name;
     email = user.email;
     phoneNo = user.phoneNo.toString();
@@ -362,7 +480,6 @@ router.get("/download/:id", orgauth, async (req, res) => {
     firstname = lastname = rollno = regno = degree = branch = year = "";
 
     if (profile) {
-      console.log("lol");
       if (profile.firstname) firstname = profile.firstname;
       if (profile.lastname) lastname = profile.lastname;
       if (profile.rollno) rollno = profile.rollno;
@@ -388,8 +505,10 @@ router.get("/download/:id", orgauth, async (req, res) => {
     registrants.push(obj);
   }
 
-  const fileName = post.title.toString() + "_" + shortid.generate() + ".csv";
+  const fileName = post.title.toString() + "_" + shortid.generate()+ ".csv";
   const fileLocation = `${baseDirCsv}${fileName}`;
+
+  console.log(fileLocation);
 
   await fs.open(fileLocation, "w", function (err) {
     if (err) console.log(err);
@@ -425,7 +544,21 @@ router.get("/download/:id", orgauth, async (req, res) => {
     console.log(err);
   }
 
-  res.status(200).download(fileLocation);
+  
+  return res.status(200).download(fileLocation);
 });
 
 module.exports = router;
+
+// Send Mail
+    // try {
+    //   confirmMail(user.email, post)
+    //     .then(() => {
+          
+    //     })
+    //     .catch((err) => {
+    //       res.status(200).json({ msg: err });
+    //     });
+    // } catch (err) {
+    //   res.status(500).json({ msg: "Error Sending Email" });
+    // }

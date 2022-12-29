@@ -1,21 +1,27 @@
 const router = require('express').Router();
 
+
+// Models
+const Profile = require('../../models/Profile');
+
+
+// Helper
 const auth = require("../../middleware/auth");
+
 
 // User profile
 router.get('/me', auth, async (req,res) => {
     try {
-
         const profile = await Profile.findOne({ user: req.user.id }).populate('user', ['name', 'avatar', 'phoneNo']);
         if(!profile){
             return res.status(400).json({msg: 'There is no profile for this user'});
         }
-
+        
         return res.status(200).json(profile);
 
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        return res.status(500).json({ errors: [{ msg: "Server Error" }] });
     }
 });
 
@@ -32,7 +38,7 @@ router.get('/:id', auth, async (req,res) => {
 
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        return res.status(500).json({ errors: [{ msg: "Server Error" }] });
     }
 });
 
@@ -47,9 +53,9 @@ router.post('/', auth, async (req, res) => {
       rollno,
       regno,
       hostel,
-      linkedin,
+      linkedinusername,
       githubusername,
-    } = req.body;
+    } = req.body.data;
 
 
     let profileFields = {};
@@ -64,25 +70,28 @@ router.post('/', auth, async (req, res) => {
     if(rollno) profileFields.rollno = rollno;
     if(regno) profileFields.regno = regno;
     if(hostel) profileFields.hostel = hostel;
-    if(linkedin) profileFields.social.linkedin = linkedin;
+    if(linkedinusername) profileFields.linkedinusername = linkedinusername;
     if(githubusername) profileFields.githubusername = githubusername;
 
     try {
       let profile = await Profile.findOne({ user: req.user.id })
 
-      if(profile){
+
+      if(profile !== null){
           // Update Profile
           profile = await Profile.findOneAndUpdate({user: req.user.id}, {$set: profileFields}, { new: true })
-          res.status(200).json({ msg: "Profile Updated", profile: profile });
+          await profile.save();
+          return res.status(200).json({ msg: "Profile Updated", profile: profile });
+
       } else {
           profile = new Profile(profileFields);
       }
 
       await profile.save();
-      res.status(200).json({ msg: "Profile Created", profile: profile });
+      return res.status(200).json({ msg: "Profile Created", profile: profile });
     } catch (err) {
       console.error(err.message)
-      res.status(500).send('Server Error')
+      return res.status(500).json({ errors: [{ msg: "Server Error" }] });
     }
 })
 
@@ -91,13 +100,12 @@ router.delete('/', auth, async (req,res) => {
     try {
 
         await Profile.findOneAndRemove({ user: req.user.id })
-        return res.status(200).json({msg: 'User deleted'});
+        return res.status(200).json({msg: 'User Profile deleted'});
 
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error')
+        return res.status(500).json({ errors: [{ msg: "Server Error" }] });
     }
 })
-
 
 module.exports = router;

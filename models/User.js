@@ -18,7 +18,6 @@ const UserSchema = new mongoose.Schema({
 
   phoneNo: {
     type: String,
-    required: true,
     unique: true,
   },
 
@@ -26,6 +25,11 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+
+  isOrganization: {
+    type: Boolean,
+    default: false
+  }
 });
 
 module.exports = User = mongoose.model("user", UserSchema);
