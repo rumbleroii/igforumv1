@@ -30,14 +30,15 @@ const ProfileSchema = new mongoose.Schema({
     },
 
     rollno: {
-        type: Number,
+        type: String,
         required: true,
-        unique: false
+        unique: true
     },
 
     regno: {
-        type: Number,
+        type: String,
         required: true,
+        unique: true
     },
 
     // skills : [{
