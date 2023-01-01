@@ -383,10 +383,10 @@ router.put("/like/:id", auth, async (req, res) => {
 
     if (!post.likes.includes(req.user.id)) {
       await post.updateOne({ $push: { likes: req.user.id } });
-      res.status(200).json({ msg: "The post has been liked" });
+      return res.status(200).json({ likes: post.likes.length });
     } else {
       await post.updateOne({ $pull: { likes: req.user.id } });
-      res.status(200).json({ msg: "The post has been disliked" });
+      return res.status(200).json({ likes: post.likes.length });
     }
   } catch (err) {
     console.log(err);
@@ -415,12 +415,12 @@ router.put("/register/:id", auth, async (req, res) => {
   if (!registrant) {
     await post.updateOne({ $push: { registrants: { user: user } } });
     const savedPost = await post.save();
-    res.status(200).json({ msg: "Registered for event", post: savedPost });
+    return res.status(200).json({ msg: "Registered for event", post: savedPost });
     
   } else {
     await post.updateOne({ $pull: { registrants: { user: user } } });
     const savedPost = await post.save();
-    res.status(200).json({ msg: "Unregistered for event", post: savedPost });
+    return res.status(200).json({ msg: "Unregistered for event", post: savedPost });
   }
 });
 
